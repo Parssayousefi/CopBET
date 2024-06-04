@@ -80,7 +80,7 @@ plot_boxplots_CH2016(tbl.entropy,tbl,'Temporal entropy')
 CopBETtbl.temporal_entropy = tbl.entropy;
 
 %% Metastate series complexity (<1 minute on example data)
-atlas = 'Lausanne463';
+atlas = 'Schaefer1000';
 [tbl,data,opts] = CopBET_CarhartHarris_2016_data(atlas,'ts','example');
 
 tbl = CopBET_metastate_series_complexity(tbl,'keepdata',true,'parallel',true);
