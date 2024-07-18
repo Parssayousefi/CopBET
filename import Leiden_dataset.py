@@ -5,8 +5,8 @@ from nilearn.interfaces.fmriprep import load_confounds
 import os
 import pandas as pd
 import numpy as np
-#import scipy.io
-#import matlab.engine
+import scipy.io
+import matlab
 
 
 # def process_data_bids(bids_root, strategy, atlas_name):
