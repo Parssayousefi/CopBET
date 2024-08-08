@@ -34,4 +34,6 @@ function tbl = CreateTBL(csvFolderPath)
     % Create a table with the extracted data and metadata
     tbl = table(dataCells, datasets, subjects, tasks, sessions, atlases, ...
                 'VariableNames', {'Data', 'Dataset', 'Subject', 'Task', 'session', 'Atlas'});
+
+    
 end

@@ -180,11 +180,11 @@ degree_to_plot = 27;
 plot_boxplots_CH2016(entropy(:,degree_to_plot),tbl,['Degree distribution entropy, degree ',num2str(degree_to_plot)])
 
 %% Viol 2019 script (instant)
-clearvars entropy
-atlas = 'HarvardOxford_cort_subcort';
-[tbl,data,opts] = CopBET_CarhartHarris_2016_data(atlas,'ts','example');
+%%clearvars entropy
+%%atlas = 'HarvardOxford_cort_subcort';
+%%[tbl,data,opts] = CopBET_CarhartHarris_2016_data(atlas,'ts','example');
 
-tbl = CopBET_geodesic_entropy(tbl,'keepdata',true,'parallel',true);
+tbl_test= CopBET_geodesic_entropy(tbl,'keepdata',true,'parallel',true);
 % outputs a vector of entropy values pr scan, each value corresponds to one
 % integer "mean degree" at which the degree distribution entropy is evaluated
 
@@ -292,8 +292,8 @@ CopBETtbl.Time_series_complexity_temporal = tbl.entropy;
 plot_boxplots_CH2016(tbl.entropy,tbl,'Time series complexity, temporal')
 
 %% Varley script, spatial LZ78 (<5 minutes on example data)
-atlas = 'Schaefer1000';
-[tbl,data,opts] = CopBET_CarhartHarris_2016_data(atlas,'ts','example');
+%atlas = 'Schaefer1000';
+%[tbl,data,opts] = CopBET_CarhartHarris_2016_data(atlas,'ts','example');
 tbl = CopBET_time_series_complexity(tbl,'LZ78spatial',true,true);
 
 CopBETtbl.Time_series_complexity_spatial = tbl.entropy;

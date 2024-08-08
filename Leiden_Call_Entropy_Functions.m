@@ -10,8 +10,8 @@ tbl_metastate = CopBET_metastate_series_complexity(tbl,'keepdata',true,'parallel
 %% Dynamic conditional correlation (DCC) entropy (Several hours pr scan)
 % This one doesn't work with the shortened scans. Please download the full
 % dataset. 
-clearvars entropy
-atlas = 'Shen268';
+%clearvars entropy
+%atlas = 'Shen268';
 % This one takes several days to run. Second argument is whether to actually run the script or to use saved previous outputs 
 tbl_DCC = CopBET_DCC_entropy(tbl,true,'keepdata',true,'parallel',true);
 % outputs a vector of entropy values pr scan, each value corresponds to one
@@ -19,6 +19,7 @@ tbl_DCC = CopBET_DCC_entropy(tbl,true,'keepdata',true,'parallel',true);
 
 % unwrap roi-to-roi DCC edges to network-to-network
 Shen268 = niftiread('Atlases/Shen268_2mm.nii');
+
 Shen268labels = readtable('Atlases/shen_268_parcellation_networklabels_1.csv');
 
 atlasnames = {'Medial_frontal','Frontoparietal','Deafult_mode','Subcortical_cerebellum',...
@@ -77,6 +78,7 @@ atlas = niftiread('Atlases/Yeo17_liberal_2mm.nii');
 [tbl,data,opts] = CopBET_CarhartHarris_2016_data([],'denoised_volumes','example');
 
 tbl = CopBET_sample_entropy(tbl,atlas,true,'keepdata',true,'parallel',true);
+
 % outputs a matrix of entropy values pr scan, each matrix contains values
 % corresponding to a specific multi-scale sample entropy scale (1 to 5)
 % along the rows, and a ROI in the (Yeo17) atlas along the columns. 

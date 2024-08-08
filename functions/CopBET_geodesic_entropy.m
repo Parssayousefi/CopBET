@@ -56,6 +56,32 @@ opts.chosen_degrees = 1:100; %degrees across which to test
 opts.bins = 0.5:100.5; %histogram bins
 
 %load data
+%leiden debugging starts here
+% Diagnostic code
+disp('Structure of in:');
+disp(class(in));
+disp(['Size of in: ', mat2str(size(in))]);
+
+disp('Examining the first few rows of in:');
+for i = 1:min(5, height(in))
+    disp(['Row ', num2str(i), ':']);
+    disp(['  Class of in{', num2str(i), ',1}: ', class(in{i,1})]);
+    disp(['  Size of in{', num2str(i), ',1}: ', mat2str(size(in{i,1}))]);
+    if iscell(in{i,1})
+        disp(['  Class of in{', num2str(i), ',1}{1}: ', class(in{i,1}{1})]);
+        disp(['  Size of in{', num2str(i), ',1}{1}: ', mat2str(size(in{i,1}{1}))]);
+    end
+end
+
+% Your existing parfor loop
+parfor(ses = 1:height(in), numworkers)
+    % ... (rest of your code)
+end
+
+%Leiden debugging ends here
+
+
+
 parfor(ses = 1:height(in),numworkers)
     disp(['Working on entropy calculations for session: ',num2str(ses)])
     ts = in{ses,1}{1};
@@ -88,7 +114,7 @@ for i=1:length(opts.chosen_degrees)
     % extract the appropriate matrix
     [~,idx] = min(abs(degree - opts.chosen_degrees(i)));
     G = graph(bin_matrix{idx});
-    
+
     %%%%%% calculate the geodesic distance for all nodes
     entropy_n = nan(1,length(Z));
     paths = distances(G); % can be 0 (self-connection), int, or inf

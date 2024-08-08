@@ -3,7 +3,7 @@ if nargin<2
     prompt = '';
 end
 if any(isnan(X(:)))
-    warning(['NaN produced, ',prompt])
+    warning(['NaN produced, ',prompt, '. NaN count: ', num2str(sum(isnan(X(:))))]);
 end
 if any(isinf(X(:)))
     warning(['inf produced, ',prompt])

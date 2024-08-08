@@ -4,7 +4,7 @@
 % Evaluates sample entropy as in Lebedev et al., 2016. Sample entropy is
 % very hard to explain, so perhaps it is best to read the paper
 %
-% Input:
+% Input: 
 %   in: char with the path to the input, denoised voxel-wise time series or
 %   a table where the first column contains
 %   chars (in cells), e.g., different subjects or scan sessions.
@@ -42,89 +42,100 @@
 %    along with this program.  If not, see http://www.gnu.org/licenses/.
 
 function out = CopBET_sample_entropy(in,atlas,compute,varargin)
-
-if nargin<3
-    error('please specify atlas and whether to do computations or not')
-end
-if compute~=true
-    error('this option is not currently implemented, please set compute to true')
-end
-
-[out,numworkers,in,NRUspecific] = CopBET_function_init(in,varargin);
-
-brainVox = find(atlas(:)>0);
-imgSize = size(atlas);
-num_rois = numel(unique(atlas(atlas>0)));
-
-r = 0.3;
-m = 2;
-scale = 1:5;
-
-%load data
-% parfor(ses = 1:height(in),numworkers)
-for ses = 1:height(in)
-    disp(['Working on entropy calculations for session: ',num2str(ses)])
-    % 4D file
-    if NRUspecific
-        if compute~=true
-            for a = 1:numel(scale)
-                V = niftiread([compute,'/',num2str(in.sesidx(ses)),'_scale',num2str(a)]);
-                V = double(V(:));
-                
-                for roi = 1:num_rois
-                    tmp = V(atlas(:)==roi);
-                    entropy{ses}(a,roi) = mean(tmp(tmp~=0));
+    if nargin<3
+        error('please specify atlas and whether to do computations or not')
+    end
+    if compute~=true
+        error('this option is not currently implemented, please set compute to true')
+    end
+    
+    [out,numworkers,in,NRUspecific] = CopBET_function_init(in,varargin);
+    
+    brainVox = find(atlas(:)>0);
+    imgSize = size(atlas);
+    num_rois = numel(unique(atlas(atlas>0)));
+    
+    r = 0.3;
+    m = 2;
+    scale = 1:5;
+    
+    for ses = 1:height(in)
+        disp(['Working on entropy calculations for session: ', num2str(ses)])
+        
+        % Get the data for this session
+        session_data = in{ses,1};
+        
+        % Check if session_data is a cell containing a numeric array
+        if iscell(session_data) && isnumeric(session_data{1})
+            image_4D = session_data{1};
+        elseif NRUspecific
+            if compute~=true
+                for a = 1:numel(scale)
+                    V = niftiread([compute,'/',num2str(in.sesidx(ses)),'_scale',num2str(a)]);
+                    V = double(V(:));
+                    
+                    for roi = 1:num_rois
+                        tmp = V(atlas(:)==roi);
+                        entropy{ses}(a,roi) = mean(tmp(tmp~=0));
+                    end
                 end
+                continue
+            end
+            path = in{ses,1}{1};
+            image_4D = double(niftiread(path)); %4D series
+            if ~isempty(regexp(path,'denoisedn'))
+                image_4D = NRUspecific_downsamplemr001data(image_4D);
+            end
+        else
+            error('Unexpected data format for session %d', ses);
+        end
+        
+        disp(['Data dimensions: ', num2str(size(image_4D))]);
+        
+        % Ensure image_4D is double precision
+        image_4D = double(image_4D);
+        
+        % Reshape image_4D to match atlas dimensions if necessary
+        if size(image_4D, 2) == numel(unique(atlas(atlas>0)))
+            disp('Reshaping data to match atlas dimensions...');
+            [x, y, z] = size(atlas);
+            image_4D_reshaped = zeros(x, y, z, size(image_4D, 1));
+            for i = 1:max(atlas(:))
+                mask = atlas == i;
+                image_4D_reshaped(repmat(mask, [1, 1, 1, size(image_4D, 1)])) = ...
+                    repmat(image_4D(:, i), [sum(mask(:)), 1]);
+            end
+            image_4D = image_4D_reshaped;
+        end
+        
+        % Center the data
+        image_4D = image_4D - mean(image_4D, 4);
+        
+        imsz = size(image_4D);
+        if any(imsz(1:3)~=imgSize)
+            error('Wrong image size')
+        end
+        
+        % calculate sample entropy for all voxels
+        for a = 1:numel(scale)
+            MSE = nan(length(brainVox),1);
+            parfor (vox = 1:length(brainVox),numworkers)
+                [row,col,sl] = ind2sub(imgSize,brainVox(vox));
+                ts = squeeze(image_4D(row,col,sl,:));
+                r_val = r*std(double(ts));
+                tmp = sample_entropy(m,r_val,ts,scale(a));
+                MSE(vox) = tmp(1);
+            end
+            MSE2 = nan(imgSize);
+            for vox = 1:numel(brainVox)
+                [row,col,sl] = ind2sub(imgSize,brainVox(vox));
+                MSE2(row,col,sl) = MSE(vox);
+            end
+            for roi = 1:num_rois
+                tmp = MSE2(atlas==roi);
+                entropy{ses}(a,roi) = mean(tmp(tmp~=0));
             end
         end
-        continue
     end
-    path = in{ses,1}{1};
-    image_4D = double(niftiread(path)); %4D series
-    if NRUspecific
-        if ~isempty(regexp(path,'denoisedn'))
-            image_4D = NRUspecific_downsamplemr001data(image_4D);
-        end
-    end
-    
-    image_4D = image_4D - mean(image_4D,4);
-    
-    imsz = size(image_4D);
-    
-    if any(imsz(1:3)~=imgSize)
-        error('Wrong image size')
-    end
-    
-    
-    % calculate sample entropy for all voxels
-    for a = 1:numel(scale)
-        MSE = nan(length(brainVox),1);
-        parfor (vox = 1:length(brainVox),numworkers)
-            %         for vox = 1:length(brainVox)
-            [row,col,sl] = ind2sub(imgSize,brainVox(vox));
-            ts = squeeze(image_4D(row,col,sl,:));
-            
-            r_val = r*std(double(ts));
-            tmp = sample_entropy(m,r_val,ts,scale(a));
-            MSE(vox) = tmp(1);
-            
-        end
-        MSE2 = nan(imgSize);
-        for vox = 1:numel(brainVox)
-            [row,col,sl] = ind2sub(imgSize,brainVox(vox));
-            MSE2(row,col,sl) = MSE(vox);
-        end
-        
-        for roi = 1:num_rois
-            tmp = MSE2(atlas==roi);
-            entropy{ses}(a,roi) = mean(tmp(tmp~=0));
-        end
-        
-    end
-    
-    
-    
+    out.entropy = entropy';
 end
-out.entropy = entropy';
-end
-
